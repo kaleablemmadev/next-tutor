@@ -152,9 +152,9 @@ export default function RegisterScreen() {
 
                     <View style={styles.brandRow}>
                         <View style={styles.logo}>
-                            <Text style={styles.logoLetter}>A+</Text>
+                            <Text style={styles.logoLetter}>NT</Text>
                         </View>
-                        <Text style={styles.brandName}>A Plus Tutor</Text>
+                        <Text style={styles.brandName}>Next Tutor</Text>
                     </View>
 
                     <View style={styles.intro}>

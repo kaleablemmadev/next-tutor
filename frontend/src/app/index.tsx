@@ -70,10 +70,10 @@ export default function LoginScreen() {
                 >
                     <View style={styles.brandRow}>
                         <View style={styles.logo}>
-                            <Text style={styles.logoLetter}>A+</Text>
+                            <Text style={styles.logoLetter}>NT</Text>
                         </View>
 
-                        <Text style={styles.brandName}>A Plus Tutor</Text>
+                        <Text style={styles.brandName}>Next Tutor</Text>
                     </View>
 
                     <View style={styles.intro}>
@@ -164,7 +164,7 @@ export default function LoginScreen() {
                         </Pressable>
 
                         <View style={styles.signupRow}>
-                            <Text style={styles.signupText}>New to A Plus Tutor? </Text>
+                            <Text style={styles.signupText}>New to Next Tutor? </Text>
                             <Pressable
                                 onPress={() => router.push('/register')}
                             >
