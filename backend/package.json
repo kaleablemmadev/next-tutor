@@ -6,7 +6,8 @@
   "scripts": {
     "dev": "tsx watch src/server.ts",
     "build": "prisma generate --config prisma7.config.ts && tsc",
-    "start": "node dist/server.js"
+    "start": "node dist/server.js",
+    "test": "node --import tsx --test tests/**/*.test.ts"
   },
   "dependencies": {
     "@prisma/adapter-pg": "^7.10.1",

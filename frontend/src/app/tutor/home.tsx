@@ -1,6 +1,7 @@
 
 import { useState } from 'react';
 import {
+    Modal,
     Pressable,
     ScrollView,
     StatusBar,
@@ -206,49 +207,70 @@ export default function TutorHomeScreen() {
                     ))
                 )}
 
-                {selectedOffer && (
-                    <View style={styles.detailCard}>
-                        <View style={styles.detailHeader}>
-                            <Text style={styles.sectionTitle}>Offer details</Text>
-                            <Pressable onPress={() => setSelectedOffer(null)}>
-                                <Text style={styles.closeText}>Close ✕</Text>
-                            </Pressable>
-                        </View>
-
-                        <Text style={styles.detailTitle}>{selectedOffer.grade}</Text>
-                        <Text style={styles.detailText}>
-                            Subjects: {selectedOffer.subjects.join(', ')}
-                        </Text>
-                        <Text style={styles.detailText}>
-                            Location: {selectedOffer.location}
-                        </Text>
-                        <Text style={styles.detailText}>
-                            Schedule: {selectedOffer.schedule}
-                        </Text>
-                        <Text style={styles.detailText}>
-                            {selectedOffer.pay}
-                        </Text>
-
-                        <Pressable
-                            style={styles.primaryButton}
-                            onPress={() => {
-                                setSelectedOffer(null);
-                                // Application flow will be implemented next.
-                            }}
-                        >
-                            <Text style={styles.primaryButtonText}>Apply for this offer</Text>
-                        </Pressable>
-
-                        <Text style={styles.helperText}>
-                            Applications aren&apos;t submitted yet in this prototype.
-                        </Text>
-                    </View>
-                )}
-
                 <Text style={styles.footer}>
                     Your skills can open someone&apos;s future.
                 </Text>
             </ScrollView>
+
+            <Modal
+                visible={selectedOffer !== null}
+                transparent
+                animationType="fade"
+                statusBarTranslucent
+                onRequestClose={() => setSelectedOffer(null)}
+            >
+                <View style={styles.modalOverlay}>
+                    <Pressable
+                        style={StyleSheet.absoluteFill}
+                        onPress={() => setSelectedOffer(null)}
+                        accessibilityRole="button"
+                        accessibilityLabel="Close offer details"
+                    />
+
+                    {selectedOffer && (
+                        <View style={styles.detailCard}>
+                            <View style={styles.detailHeader}>
+                                <Text style={styles.sectionTitle}>Offer details</Text>
+
+                                <Pressable onPress={() => setSelectedOffer(null)}>
+                                    <Text style={styles.closeText}>Close ✕</Text>
+                                </Pressable>
+                            </View>
+
+                            <Text style={styles.detailTitle}>{selectedOffer.grade}</Text>
+
+                            <Text style={styles.detailText}>
+                                Subjects: {selectedOffer.subjects.join(', ')}
+                            </Text>
+                            <Text style={styles.detailText}>
+                                Location: {selectedOffer.location}
+                            </Text>
+                            <Text style={styles.detailText}>
+                                Schedule: {selectedOffer.schedule}
+                            </Text>
+                            <Text style={styles.detailText}>
+                                {selectedOffer.pay}
+                            </Text>
+
+                            <Pressable
+                                style={styles.primaryButton}
+                                onPress={() => {
+                                    setSelectedOffer(null);
+                                    // Application flow will be implemented next.
+                                }}
+                            >
+                                <Text style={styles.primaryButtonText}>
+                                    Apply for this offer
+                                </Text>
+                            </Pressable>
+
+                            <Text style={styles.helperText}>
+                                Applications aren&apos;t submitted yet in this prototype.
+                            </Text>
+                        </View>
+                    )}
+                </View>
+            </Modal>
 
             <View style={styles.bottomNav}>
                 {[
@@ -498,13 +520,26 @@ const styles = StyleSheet.create({
         marginTop: 9,
         marginBottom: 18,
     },
+    modalOverlay: {
+        flex: 1,
+        backgroundColor: 'rgba(0, 0, 0, 0.45)',
+        alignItems: 'center',
+        justifyContent: 'center',
+        padding: 20,
+    },
     detailCard: {
+        width: '100%',
+        maxWidth: 420,
         backgroundColor: colors.surface,
         borderRadius: 22,
         padding: 20,
         borderWidth: 1,
         borderColor: colors.border,
-        marginTop: 8,
+        elevation: 8,
+        shadowColor: '#000',
+        shadowOffset: { width: 0, height: 4 },
+        shadowOpacity: 0.2,
+        shadowRadius: 12,
     },
     detailHeader: {
         flexDirection: 'row',
