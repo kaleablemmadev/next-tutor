@@ -11,13 +11,20 @@ import tutorApplicationRoutes from './routes/tutor-application.routes.js';
 
 const app: Express = express();
 const PORT = Number(process.env.PORT) || 3000;
-const allowedOrigins = (process.env.FRONTEND_URL ?? 'http://localhost:8081').split(',').map((origin) => origin.trim()).filter(Boolean);
+const allowedOrigins = ['http://localhost:8081', 'https://a-plus-tutor.vercel.app', 'https://a-plus-tutor-ivjwdyr1r-kaleablemmadev-7070s-projects.vercel.app'];
 
 app.use(
     cors({
-        origin: allowedOrigins,
+        origin: (origin, callback) => {
+            if (!origin || allowedOrigins.includes(origin) || origin.endsWith('.vercel.app')) {
+                callback(null, true);
+            } else {
+                callback(new Error('Not allowed by CORS'));
+            }
+        },
         methods: ['GET', 'POST', 'PUT', 'PATCH', 'DELETE', 'OPTIONS'],
         allowedHeaders: ['Content-Type', 'Authorization'],
+        credentials: true,
     }),
 );
 
