@@ -39,6 +39,7 @@ export default function LoginScreen() {
             const result = await login({
                 identifier: identifier.trim(),
                 password,
+                expectedRole: 'TUTOR', 
             });
 
             if (result.data.user.role === 'TUTOR') {
@@ -165,10 +166,8 @@ export default function LoginScreen() {
 
                         <View style={styles.signupRow}>
                             <Text style={styles.signupText}>New to Next Tutor? </Text>
-                            <Pressable
-                                onPress={() => router.push('/register')}
-                            >
-                                <Text style={styles.textAction}>Create account</Text>
+                            <Pressable onPress={() => router.push('/auth/tutor-register' as any)}>
+                                <Text style={styles.textAction}>Apply as tutor</Text>
                             </Pressable>
                         </View>
                     </View>

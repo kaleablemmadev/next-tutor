@@ -5,6 +5,7 @@ import { saveSession } from "../services/session";
 type LoginInput = {
     identifier: string;
     password: string;
+    expectedRole?: 'PARENT' | 'TUTOR'; // <-- Add optional expectedRole
 };
 
 type LoginResponse = {
@@ -17,7 +18,7 @@ type LoginResponse = {
             username: string;
             email?: string;
             phoneNumber?: string;
-            role: string; // 'PARENT' | 'TUTOR'
+            role: string;
         };
     };
 };
@@ -37,7 +38,6 @@ export async function login(input: LoginInput): Promise<LoginResponse> {
         throw new Error(result.message ?? 'Unable to sign in.');
     }
 
-    // Save tokens and role securely
     await saveSession(
         result.data.accessToken,
         result.data.refreshToken,

@@ -1,6 +1,5 @@
 import { useState } from 'react';
 import { useRouter } from 'expo-router';
-import { API_BASE_URL } from '@/config/api';
 import {
     ActivityIndicator,
     Alert,
@@ -16,6 +15,7 @@ import {
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { colors } from '@/theme/colors';
+import { registerParent } from '@/features/auth/api/register';
 
 type StudentForm = {
     fullName: string;
@@ -87,7 +87,7 @@ export default function ParentRegisterScreen() {
         setLoading(true);
 
         try {
-            const payload = {
+            await registerParent({
                 username: username.trim(),
                 phoneNumber: phoneNumber.trim(),
                 password,
@@ -101,19 +101,7 @@ export default function ParentRegisterScreen() {
                     gradeId: s.gradeId.trim(),
                     additionalNotes: s.additionalNotes.trim() || undefined,
                 })),
-            };
-
-            const response = await fetch(`${API_BASE_URL}/parents/register-parent`, {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify(payload),
             });
-
-            const data = await response.json();
-
-            if (!response.ok) {
-                throw new Error(data.message || 'Registration failed.');
-            }
 
             Alert.alert('Success!', 'Parent account and student profiles created successfully.', [
                 {

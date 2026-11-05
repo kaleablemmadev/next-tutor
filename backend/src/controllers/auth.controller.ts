@@ -41,7 +41,19 @@ export const register = async (req: Request, res: Response) => {
 
 export const login = async (req: Request, res: Response) => {
     try {
-        const result = await loginTutor(req.body);
+        // 1. Extract expectedRole alongside login credentials
+        const { expectedRole, ...loginCredentials } = req.body;
+
+        const result = await loginTutor(loginCredentials);
+
+        // 2. Strict Role Boundary Check
+        // If an expectedRole was provided by the frontend, verify it matches the user's database role
+        if (expectedRole && result.user && result.user.role !== expectedRole) {
+            return res.status(403).json({
+                code: 'FORBIDDEN_ROLE',
+                message: `Access denied. This account is registered as a ${result.user.role.toLowerCase()}. Please sign in through the correct portal.`,
+            });
+        }
 
         return res.status(200).json({
             message: 'Login successful',

@@ -45,7 +45,7 @@ export default function TutorHomeScreen() {
     const fetchOffers = async () => {
         try {
             const token = await getAccessToken();
-            const response = await fetch(`${API_BASE_URL}/tutors/offers`, {
+            const response = await fetch(`${API_BASE_URL}/tutor/offers`, {
                 headers: {
                     Authorization: `Bearer ${token}`,
                 },

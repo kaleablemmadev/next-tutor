@@ -36,6 +36,7 @@ export default function ParentLoginScreen() {
             const response = await login({
                 identifier: identifier.trim(),
                 password,
+                expectedRole: 'PARENT',
             });
 
             const userRole = response.data.user.role;

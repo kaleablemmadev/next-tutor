@@ -12,6 +12,18 @@ export type RegisterTutorInput = {
     educationStatus: 'NONGRADUATE' | 'GRADUATE';
 };
 
+export type RegisterParentInput = {
+    username: string;
+    phoneNumber: string;
+    password: string;
+    email?: string;
+    city: string;
+    subCity: string;
+    woreda?: string;
+    village?: string;
+    students: StudentInput[];
+};
+
 type RegisterTutorResponse = {
     message: string;
     data: {
@@ -24,6 +36,24 @@ type RegisterTutorResponse = {
         emailVerified: boolean;
         gender: 'MALE' | 'FEMALE';
     };
+};
+
+type RegisterParentResponse = {
+    message: string;
+    data: {
+        id: string;
+        fullName: string;
+        username: string;
+        email: string;
+        phoneNumber: string;
+        role: string;
+    };
+};
+
+export type StudentInput = {
+    fullName: string;
+    gradeId: string;
+    additionalNotes?: string;
 };
 
 export async function registerTutor(
@@ -44,4 +74,22 @@ export async function registerTutor(
     }
 
     return result as RegisterTutorResponse;
+}
+
+export async function registerParent(input: RegisterParentInput) {
+    const response = await fetch(`${API_BASE_URL}/parents/register-parent`, {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(input),
+    });
+
+    const result = await response.json();
+
+    if (!response.ok) {
+        throw new Error(result.message ?? 'Unable to create parent account.');
+    }
+
+    return result;
 }
