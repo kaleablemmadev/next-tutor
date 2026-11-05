@@ -47,5 +47,10 @@
     "skipLibCheck": true,
     "forceConsistentCasingInFileNames": true
   },
+  "exclude": [
+    "../frontend",
+    "node_modules",
+    "dist"
+  ],
   "include": ["src/**/*.ts"]
 }
