@@ -31,6 +31,7 @@ export default function ParentRegisterScreen() {
 
     // Step 1: Parent Account State
     const [username, setUsername] = useState('');
+    const [fullName, setFullName] = useState('');
     const [phoneNumber, setPhoneNumber] = useState('');
     const [password, setPassword] = useState('');
     const [email, setEmail] = useState('');
@@ -63,6 +64,10 @@ export default function ParentRegisterScreen() {
     };
 
     const handleNextStep = () => {
+        if (!username.trim() || !fullName.trim() || !phoneNumber.trim() || !password.trim() || !subCity.trim()) {
+            setErrorMessage('Please fill in your username, full name, phone number, password, and sub-city.');
+            return;
+        }
         if (!username.trim() || !phoneNumber.trim() || !password.trim() || !subCity.trim()) {
             setErrorMessage('Please fill in your username, phone number, password, and sub-city.');
             return;
@@ -89,6 +94,7 @@ export default function ParentRegisterScreen() {
         try {
             await registerParent({
                 username: username.trim(),
+                fullName: fullName.trim(),
                 phoneNumber: phoneNumber.trim(),
                 password,
                 email: email.trim() || undefined,
@@ -163,6 +169,15 @@ export default function ParentRegisterScreen() {
                                     value={username}
                                     onChangeText={setUsername}
                                     autoCapitalize="none"
+                                />
+
+                                <Text style={styles.label}>Full Name</Text>
+                                <TextInput
+                                    style={styles.input}
+                                    placeholder="e.g. Abebe Kebede"
+                                    placeholderTextColor="#999"
+                                    value={fullName}
+                                    onChangeText={setFullName}
                                 />
 
                                 <Text style={styles.label}>Phone Number</Text>
