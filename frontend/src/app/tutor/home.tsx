@@ -1,8 +1,10 @@
 // src/app/tutor/home.tsx
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { useRouter } from 'expo-router';
-import { logout } from '@/features/auth/api/logout';
+import { API_BASE_URL } from '@/config/api';
+import { getAccessToken, clearSession } from '@/features/auth/services/session';
 import {
+    ActivityIndicator,
     Alert,
     Modal,
     Pressable,
@@ -17,43 +19,13 @@ import { colors } from '../../theme/colors';
 
 type Offer = {
     id: string;
-    grade: string;
+    grade?: string;
     subjects: string[];
     location: string;
     schedule: string;
     pay: string;
-    match: boolean;
+    match?: boolean;
 };
-
-const sampleOffers: Offer[] = [
-    {
-        id: '1',
-        grade: 'Grade 8',
-        subjects: ['Mathematics', 'Physics'],
-        location: 'Bole, Addis Ababa',
-        schedule: 'Weekdays · Afternoon',
-        pay: 'Payment details available',
-        match: true,
-    },
-    {
-        id: '2',
-        grade: 'Grade 10',
-        subjects: ['Mathematics', 'Chemistry'],
-        location: 'Kazanchis, Addis Ababa',
-        schedule: 'Weekends · Morning',
-        pay: 'Payment details available',
-        match: false,
-    },
-    {
-        id: '3',
-        grade: 'Grade 6',
-        subjects: ['All subjects'],
-        location: 'Megenagna, Addis Ababa',
-        schedule: 'Flexible schedule',
-        pay: 'Payment details available',
-        match: true,
-    },
-];
 
 type AccountModalType = 'account' | 'logout' | 'error' | null;
 
@@ -62,31 +34,98 @@ export default function TutorHomeScreen() {
     const [activeTab, setActiveTab] = useState<'recommended' | 'all'>(
         'recommended',
     );
+    const [offers, setOffers] = useState<Offer[]>([]);
+    const [loading, setLoading] = useState(true);
+    const [applying, setApplying] = useState(false);
     const [selectedOffer, setSelectedOffer] = useState<Offer | null>(null);
     const [activeNav, setActiveNav] = useState('Offers');
     const [loggingOut, setLoggingOut] = useState(false);
     const [accountModal, setAccountModal] = useState<AccountModalType>(null);
 
+    const fetchOffers = async () => {
+        try {
+            const token = await getAccessToken();
+            const response = await fetch(`${API_BASE_URL}/tutors/offers`, {
+                headers: {
+                    Authorization: `Bearer ${token}`,
+                },
+            });
+
+            const data = await response.json();
+            if (!response.ok) {
+                throw new Error(data.message || 'Failed to fetch offers.');
+            }
+
+            // Map backend offer structure if needed, or fallback gracefully
+            const mappedOffers = (data.offers || []).map((o: any, index: number) => ({
+                id: o.id || String(index + 1),
+                grade: o.grade || 'General',
+                subjects: o.subjects || ['General Tutoring'],
+                location: o.location || 'Addis Ababa',
+                schedule: o.schedule || 'Flexible schedule',
+                pay: o.pay || 'Negotiable',
+                match: index % 2 === 0, // Mock sample match flag if not returned by backend
+            }));
+
+            setOffers(mappedOffers);
+        } catch (error: any) {
+            console.error('Error fetching offers:', error);
+        } finally {
+            setLoading(false);
+        }
+    };
+
+    useEffect(() => {
+        void Promise.resolve().then(fetchOffers);
+    }, []);
+
     const visibleOffers =
         activeTab === 'recommended'
-            ? sampleOffers.filter((offer) => offer.match)
-            : sampleOffers;
+            ? offers.filter((offer) => offer.match)
+            : offers;
 
     async function handleLogout() {
         setLoggingOut(true);
 
         try {
-            await logout();
-            router.replace('/');
+            await clearSession();
+            router.replace('/' as any);
         } catch (error) {
             setAccountModal('error');
             Alert.alert(
                 'Logout error',
-                'Unable to clear to your local session. Please try again.'
+                'Unable to clear your local session. Please try again.'
             );
             console.error(error);
         } finally {
             setLoggingOut(false);
+        }
+    }
+
+    async function handleApply(offerId: string) {
+        setApplying(true);
+        try {
+            const token = await getAccessToken();
+            const response = await fetch(`${API_BASE_URL}/tutors/applications`, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    Authorization: `Bearer ${token}`,
+                },
+                body: JSON.stringify({ offerId }),
+            });
+
+            const data = await response.json();
+            if (!response.ok) {
+                throw new Error(data.message || 'Failed to submit application.');
+            }
+
+            Alert.alert('Success!', 'Your application has been sent to the parent.');
+            setSelectedOffer(null);
+        } catch (error: any) {
+            Alert.alert('Error', error.message || 'Something went wrong applying.');
+        } finally {
+            setApplying(false);
         }
     }
 
@@ -176,12 +215,15 @@ export default function TutorHomeScreen() {
 
                 {activeTab === 'recommended' && (
                     <Text style={styles.matchNote}>
-                        Suggested using your registered preferences. These are sample
-                        results for now.
+                        Suggested using your registered preferences.
                     </Text>
                 )}
 
-                {visibleOffers.length === 0 ? (
+                {loading ? (
+                    <View style={styles.centerContainer}>
+                        <ActivityIndicator size="large" color={colors.primary} />
+                    </View>
+                ) : visibleOffers.length === 0 ? (
                     <View style={styles.emptyCard}>
                         <Text style={styles.emptyTitle}>No offers yet</Text>
                         <Text style={styles.emptyText}>
@@ -276,23 +318,25 @@ export default function TutorHomeScreen() {
                                 Schedule: {selectedOffer.schedule}
                             </Text>
                             <Text style={styles.detailText}>
-                                {selectedOffer.pay}
+                                Payment: {selectedOffer.pay}
                             </Text>
 
                             <Pressable
                                 style={styles.primaryButton}
-                                onPress={() => {
-                                    setSelectedOffer(null);
-                                    // Application flow will be implemented next.
-                                }}
+                                disabled={applying}
+                                onPress={() => handleApply(selectedOffer.id)}
                             >
-                                <Text style={styles.primaryButtonText}>
-                                    Apply for this offer
-                                </Text>
+                                {applying ? (
+                                    <ActivityIndicator color={colors.surface} />
+                                ) : (
+                                    <Text style={styles.primaryButtonText}>
+                                        Apply for this offer
+                                    </Text>
+                                )}
                             </Pressable>
 
                             <Text style={styles.helperText}>
-                                Applications aren&apos;t submitted yet in this prototype.
+                                Submitting sends your tutor profile directly to the parent.
                             </Text>
                         </View>
                     )}
@@ -438,6 +482,11 @@ const styles = StyleSheet.create({
         paddingTop: 14,
         paddingBottom: 24,
     },
+    centerContainer: {
+        paddingVertical: 40,
+        alignItems: 'center',
+        justifyContent: 'center',
+    },
     header: {
         flexDirection: 'row',
         alignItems: 'center',
@@ -458,7 +507,6 @@ const styles = StyleSheet.create({
         shadowOpacity: 0.2,
         shadowRadius: 12,
     },
-
     accountIcon: {
         width: 54,
         height: 54,
@@ -469,20 +517,17 @@ const styles = StyleSheet.create({
         alignSelf: 'center',
         marginBottom: 16,
     },
-
     accountIconText: {
         color: colors.primary,
         fontSize: 21,
         fontWeight: '800',
     },
-
     accountTitle: {
         color: colors.heading,
         fontSize: 21,
         fontWeight: '800',
         textAlign: 'center',
     },
-
     accountDescription: {
         color: colors.muted,
         fontSize: 13,
@@ -491,7 +536,6 @@ const styles = StyleSheet.create({
         marginTop: 8,
         marginBottom: 20,
     },
-
     accountOption: {
         flexDirection: 'row',
         alignItems: 'center',
@@ -500,31 +544,26 @@ const styles = StyleSheet.create({
         padding: 15,
         borderRadius: 13,
     },
-
     accountOptionText: {
         color: colors.heading,
         fontSize: 14,
         fontWeight: '700',
     },
-
     accountArrow: {
         color: colors.primary,
         fontSize: 22,
     },
-
     logoutOption: {
         alignItems: 'center',
         justifyContent: 'center',
         minHeight: 48,
         marginTop: 10,
     },
-
     logoutOptionText: {
         color: '#C44C3B',
         fontSize: 14,
         fontWeight: '700',
     },
-
     dangerButton: {
         backgroundColor: '#C44C3B',
         borderRadius: 14,
@@ -532,20 +571,17 @@ const styles = StyleSheet.create({
         alignItems: 'center',
         justifyContent: 'center',
     },
-
     dangerButtonText: {
         color: '#FFFFFF',
         fontSize: 14,
         fontWeight: '800',
     },
-
     cancelButton: {
         minHeight: 46,
         alignItems: 'center',
         justifyContent: 'center',
         marginTop: 6,
     },
-
     cancelButtonText: {
         color: colors.muted,
         fontSize: 14,

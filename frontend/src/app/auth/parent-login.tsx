@@ -33,14 +33,23 @@ export default function ParentLoginScreen() {
         setLoading(true);
 
         try {
-            await login({
+            const response = await login({
                 identifier: identifier.trim(),
                 password,
             });
 
-            router.replace('/parent/dashboard' as any);
+            const userRole = response.data.user.role;
+
+            // Dynamic routing based on server-verified role
+            if (userRole === 'PARENT') {
+                router.replace('/parent/dashboard' as any);
+            } else if (userRole === 'TUTOR') {
+                router.replace('/tutor/home' as any);
+            } else {
+                router.replace('/' as any);
+            }
         } catch (error: any) {
-            setErrorMessage(error.message || 'Invalid credentials. Please try again.');
+            setErrorMessage(error.message || 'Invalid credentials.');
         } finally {
             setLoading(false);
         }

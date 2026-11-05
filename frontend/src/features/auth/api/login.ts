@@ -5,7 +5,7 @@ import { saveSession } from "../services/session";
 type LoginInput = {
     identifier: string;
     password: string;
-}
+};
 
 type LoginResponse = {
     message: string;
@@ -17,7 +17,7 @@ type LoginResponse = {
             username: string;
             email?: string;
             phoneNumber?: string;
-            role: string;
+            role: string; // 'PARENT' | 'TUTOR'
         };
     };
 };
@@ -26,9 +26,9 @@ export async function login(input: LoginInput): Promise<LoginResponse> {
     const response = await fetch(`${API_BASE_URL}/auth/login`, {
         method: 'POST',
         headers: {
-            'Content-Type': 'application/json'
+            'Content-Type': 'application/json',
         },
-        body: JSON.stringify(input)
+        body: JSON.stringify(input),
     });
 
     const result = await response.json();
@@ -37,11 +37,12 @@ export async function login(input: LoginInput): Promise<LoginResponse> {
         throw new Error(result.message ?? 'Unable to sign in.');
     }
 
+    // Save tokens and role securely
     await saveSession(
         result.data.accessToken,
         result.data.refreshToken,
         result.data.user.role
-    )
+    );
 
     return result as LoginResponse;
 }
