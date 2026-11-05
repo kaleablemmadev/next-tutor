@@ -1,3 +1,4 @@
+// src/server.ts
 import 'dotenv/config';
 import cors from 'cors';
 import express, {type Express, type Request, type Response} from "express";
@@ -5,6 +6,8 @@ import { prisma } from './prisma.js';
 import { authenticateToken } from './middleware/auth.middleware.js';
 import { authorizeRoles } from './middleware/authorize.middleware.js';
 import authRoutes from './routes/auth.routes.js';
+import parentRoutes from './routes/parent.routes.js';
+import tutorApplicationRoutes from './routes/tutor-application.routes.js';
 
 const app: Express = express();
 const PORT = Number(process.env.PORT) || 3000;
@@ -20,7 +23,8 @@ app.use(
 
 app.use(express.json());
 app.use('/api/auth', authRoutes);
-
+app.use('/api/tutor', tutorApplicationRoutes);
+app.use('/api/parents', parentRoutes);
 app.get("/api/health", async (_req: Request, res: Response) => {
     try {
         await prisma.$queryRaw`SELECT 1`;

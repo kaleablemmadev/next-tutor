@@ -1,3 +1,5 @@
+// src/utils/refresh-token.ts
+
 import { createHash, randomBytes } from 'node:crypto';
 
 const REFRESH_TOKEN_BYTES = 32;

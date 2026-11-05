@@ -1,3 +1,5 @@
+// src/themes/colors.ts
+
 export const colors = {
     background: '#FFF6F1',
     surface: '#FFFFFF',

@@ -1,4 +1,4 @@
-
+// src/middleware/authorize.middleware.ts
 import type { Request, Response, NextFunction } from 'express';
 import type { Role } from '../generated/prisma/client.js';
 

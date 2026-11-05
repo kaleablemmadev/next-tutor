@@ -1,3 +1,4 @@
+// src/middleware/auth.middleware.ts
 import 'dotenv/config';
 import type { Request, Response, NextFunction } from "express";
 import jwt from "jsonwebtoken";
@@ -32,6 +33,20 @@ export const authenticateToken = (
     }
 
     try {
+        console.log('Authorization header exists:', !!authHeader);
+        console.log('Token length:', token.length);
+        console.log('JWT sections:', token.split('.').length);
+        console.log('Token starts with Bearer:', token.startsWith('Bearer '));
+        const decoded = jwt.decode(token, { complete: true });
+        const parts = token.split('.');
+
+        console.log('Token has surrounding whitespace:', token !== token.trim());
+        console.log('JWT section lengths:', parts.map(part => part.length));
+        console.log('JWT sections use Base64URL:', parts.every(
+            part => /^[A-Za-z0-9_-]+$/.test(part)
+        ));
+        console.log('JWT decoder returned null:', decoded === null);
+        
         const payload = jwt.verify(token, jwtSecret, {
             algorithms: ['HS256']
         });
@@ -52,7 +67,9 @@ export const authenticateToken = (
         res.locals.auth = payload as AuthPayload;
 
         return next();
-    } catch {
+    } catch (error) {
+        console.error('JWT verification failed:', error);
+
         return res.status(401).json({
             code: 'UNAUTHORIZED',
             message: 'Invalid or expired authentication token.',

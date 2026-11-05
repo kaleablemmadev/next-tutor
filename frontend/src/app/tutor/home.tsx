@@ -1,6 +1,9 @@
-
+// src/app/tutor/home.tsx
 import { useState } from 'react';
+import { useRouter } from 'expo-router';
+import { logout } from '@/features/auth/api/logout';
 import {
+    Alert,
     Modal,
     Pressable,
     ScrollView,
@@ -52,17 +55,40 @@ const sampleOffers: Offer[] = [
     },
 ];
 
+type AccountModalType = 'account' | 'logout' | 'error' | null;
+
 export default function TutorHomeScreen() {
+    const router = useRouter();
     const [activeTab, setActiveTab] = useState<'recommended' | 'all'>(
         'recommended',
     );
     const [selectedOffer, setSelectedOffer] = useState<Offer | null>(null);
     const [activeNav, setActiveNav] = useState('Offers');
+    const [loggingOut, setLoggingOut] = useState(false);
+    const [accountModal, setAccountModal] = useState<AccountModalType>(null);
 
     const visibleOffers =
         activeTab === 'recommended'
             ? sampleOffers.filter((offer) => offer.match)
             : sampleOffers;
+
+    async function handleLogout() {
+        setLoggingOut(true);
+
+        try {
+            await logout();
+            router.replace('/');
+        } catch (error) {
+            setAccountModal('error');
+            Alert.alert(
+                'Logout error',
+                'Unable to clear to your local session. Please try again.'
+            );
+            console.error(error);
+        } finally {
+            setLoggingOut(false);
+        }
+    }
 
     return (
         <SafeAreaView style={styles.safeArea}>
@@ -74,15 +100,16 @@ export default function TutorHomeScreen() {
             >
                 <View style={styles.header}>
                     <View>
-                        <Text style={styles.brand}>A+ Tutor</Text>
+                        <Text style={styles.brand}>Next Tutor</Text>
                         <Text style={styles.greeting}>Find your next opportunity.</Text>
                     </View>
 
                     <Pressable
                         accessibilityRole="button"
-                        accessibilityLabel="Open profile"
+                        accessibilityLabel="Account options"
                         style={styles.avatar}
-                        onPress={() => setActiveNav('Profile')}
+                        disabled={loggingOut}
+                        onPress={() => setAccountModal('account')}
                     >
                         <Text style={styles.avatarText}>T</Text>
                     </Pressable>
@@ -272,6 +299,101 @@ export default function TutorHomeScreen() {
                 </View>
             </Modal>
 
+            <Modal
+                visible={accountModal !== null}
+                transparent
+                animationType="fade"
+                statusBarTranslucent
+                onRequestClose={() => setAccountModal(null)}
+            >
+                <View style={styles.modalOverlay}>
+                    <Pressable
+                        style={StyleSheet.absoluteFill}
+                        onPress={() => setAccountModal(null)}
+                        accessibilityRole="button"
+                        accessibilityLabel="Close dialog"
+                    />
+
+                    <View style={styles.accountModal}>
+                        {accountModal === 'account' && (
+                            <>
+                                <View style={styles.accountIcon}>
+                                    <Text style={styles.accountIconText}>T</Text>
+                                </View>
+
+                                <Text style={styles.accountTitle}>Your account</Text>
+                                <Text style={styles.accountDescription}>
+                                    Manage your NextTutor account.
+                                </Text>
+
+                                <Pressable
+                                    style={styles.accountOption}
+                                    onPress={() => {
+                                        setAccountModal(null);
+                                        setActiveNav('Profile');
+                                    }}
+                                >
+                                    <Text style={styles.accountOptionText}>
+                                        View profile
+                                    </Text>
+                                    <Text style={styles.accountArrow}>›</Text>
+                                </Pressable>
+
+                                <Pressable
+                                    style={styles.logoutOption}
+                                    onPress={() => setAccountModal('logout')}
+                                >
+                                    <Text style={styles.logoutOptionText}>Log out</Text>
+                                </Pressable>
+                            </>
+                        )}
+
+                        {accountModal === 'logout' && (
+                            <>
+                                <Text style={styles.accountTitle}>Log out?</Text>
+                                <Text style={styles.accountDescription}>
+                                    Are you sure you want to log out of your account?
+                                </Text>
+
+                                <Pressable
+                                    style={styles.dangerButton}
+                                    disabled={loggingOut}
+                                    onPress={handleLogout}
+                                >
+                                    <Text style={styles.dangerButtonText}>
+                                        {loggingOut ? 'Logging out...' : 'Yes, log out'}
+                                    </Text>
+                                </Pressable>
+
+                                <Pressable
+                                    style={styles.cancelButton}
+                                    disabled={loggingOut}
+                                    onPress={() => setAccountModal('account')}
+                                >
+                                    <Text style={styles.cancelButtonText}>Cancel</Text>
+                                </Pressable>
+                            </>
+                        )}
+
+                        {accountModal === 'error' && (
+                            <>
+                                <Text style={styles.accountTitle}>Logout error</Text>
+                                <Text style={styles.accountDescription}>
+                                    Unable to clear your local session. Please try again.
+                                </Text>
+
+                                <Pressable
+                                    style={styles.primaryButton}
+                                    onPress={() => setAccountModal(null)}
+                                >
+                                    <Text style={styles.primaryButtonText}>Close</Text>
+                                </Pressable>
+                            </>
+                        )}
+                    </View>
+                </View>
+            </Modal>
+
             <View style={styles.bottomNav}>
                 {[
                     { label: 'Offers', symbol: '⌂' },
@@ -321,6 +443,113 @@ const styles = StyleSheet.create({
         alignItems: 'center',
         justifyContent: 'space-between',
         marginBottom: 24,
+    },
+    accountModal: {
+        width: '100%',
+        maxWidth: 360,
+        backgroundColor: colors.surface,
+        borderRadius: 24,
+        padding: 24,
+        borderWidth: 1,
+        borderColor: colors.border,
+        elevation: 8,
+        shadowColor: '#000',
+        shadowOffset: { width: 0, height: 4 },
+        shadowOpacity: 0.2,
+        shadowRadius: 12,
+    },
+
+    accountIcon: {
+        width: 54,
+        height: 54,
+        borderRadius: 18,
+        backgroundColor: colors.softOrange,
+        alignItems: 'center',
+        justifyContent: 'center',
+        alignSelf: 'center',
+        marginBottom: 16,
+    },
+
+    accountIconText: {
+        color: colors.primary,
+        fontSize: 21,
+        fontWeight: '800',
+    },
+
+    accountTitle: {
+        color: colors.heading,
+        fontSize: 21,
+        fontWeight: '800',
+        textAlign: 'center',
+    },
+
+    accountDescription: {
+        color: colors.muted,
+        fontSize: 13,
+        lineHeight: 20,
+        textAlign: 'center',
+        marginTop: 8,
+        marginBottom: 20,
+    },
+
+    accountOption: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        justifyContent: 'space-between',
+        backgroundColor: '#FFF4EE',
+        padding: 15,
+        borderRadius: 13,
+    },
+
+    accountOptionText: {
+        color: colors.heading,
+        fontSize: 14,
+        fontWeight: '700',
+    },
+
+    accountArrow: {
+        color: colors.primary,
+        fontSize: 22,
+    },
+
+    logoutOption: {
+        alignItems: 'center',
+        justifyContent: 'center',
+        minHeight: 48,
+        marginTop: 10,
+    },
+
+    logoutOptionText: {
+        color: '#C44C3B',
+        fontSize: 14,
+        fontWeight: '700',
+    },
+
+    dangerButton: {
+        backgroundColor: '#C44C3B',
+        borderRadius: 14,
+        minHeight: 48,
+        alignItems: 'center',
+        justifyContent: 'center',
+    },
+
+    dangerButtonText: {
+        color: '#FFFFFF',
+        fontSize: 14,
+        fontWeight: '800',
+    },
+
+    cancelButton: {
+        minHeight: 46,
+        alignItems: 'center',
+        justifyContent: 'center',
+        marginTop: 6,
+    },
+
+    cancelButtonText: {
+        color: colors.muted,
+        fontSize: 14,
+        fontWeight: '700',
     },
     brand: {
         color: colors.primary,

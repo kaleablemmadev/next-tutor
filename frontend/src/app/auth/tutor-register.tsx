@@ -13,14 +13,11 @@ import {
 } from 'react-native';
 import { StatusBar } from 'expo-status-bar';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import { colors } from '../theme/colors';
+import { colors } from '../../theme/colors';
 import {
     registerTutor,
     type RegisterTutorInput,
 } from '@/features/auth/api/register';
-
-type Gender = 'MALE' | 'FEMALE';
-type EducationStatus = 'NONGRADUATE' | 'GRADUATE';
 
 export default function RegisterScreen() {
     const router = useRouter();

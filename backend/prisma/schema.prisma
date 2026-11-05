@@ -8,22 +8,24 @@ datasource db {
 }
 
 model User {
-  id                              String                   @id @default(uuid())
-  username                        String                   @unique
-  email                           String                   @unique
-  phoneNumber                     String                   @unique
-  passwordHash                    String
-  role                            Role                     @default(PARENT)
-  emailVerified                   Boolean                  @default(false)
-  fullName                        String
-  gender                          Gender?
-  city                            String?
-  subCity                         String?
-  woreda                          String?
-  village                         String?
-  profilePicture                  String?
-  createdAt                       DateTime                 @default(now())
-  updatedAt                       DateTime                 @updatedAt
+  id             String   @id @default(uuid())
+  username       String   @unique
+  email          String?   @unique
+  phoneNumber    String   @unique
+  passwordHash   String
+  role           Role     @default(PARENT)
+  emailVerified  Boolean  @default(false)
+  fullName       String
+  gender         Gender?
+  city           String?
+  subCity        String?
+  woreda         String?
+  village        String?
+  profilePicture String?
+  createdAt      DateTime @default(now())
+  updatedAt      DateTime @updatedAt
+
+  students                        Student[]
   documentsReviewed               ApplicationDocument[]    @relation("DocumentReviewer")
   emailVerificationTokens         EmailVerificationToken[]
   invitationVerificationsReviewed InvitationVerification[] @relation("InvitationReviewer")
@@ -31,6 +33,46 @@ model User {
   reviewedApplications            TutorApplication[]       @relation("ApplicationReviewer")
   tutorApplications               TutorApplication[]
   applicationReviewsWritten       TutorApplicationReview[] @relation("ApplicationReviewAuthor")
+  createdOffers                   Offer[]
+  offerApplications               OfferApplication[]
+}
+
+model Student {
+  id                   String   @id @default(uuid())
+  parentId             String
+  fullName             String
+  gradeId              String
+  preferredGender      Gender? // MALE, FEMALE, or null for ANY
+  preferredMinAge      Int?
+  preferredMaxAge      Int?
+  requireCertification Boolean  @default(false)
+  additionalNotes      String?
+  createdAt            DateTime @default(now())
+  updatedAt            DateTime @updatedAt
+
+  // Relations
+  parent       User                 @relation(fields: [parentId], references: [id], onDelete: Cascade)
+  grade        Grade                @relation(fields: [gradeId], references: [id])
+  weakSubjects StudentWeakSubject[]
+  offers       Offer[]
+
+  @@index([parentId])
+  @@index([gradeId])
+}
+
+model StudentWeakSubject {
+  studentId String
+  subjectId String
+  gradeId   String
+  createdAt DateTime @default(now())
+
+  student Student @relation(fields: [studentId], references: [id], onDelete: Cascade)
+  subject Subject @relation(fields: [subjectId], references: [id])
+  grade   Grade   @relation(fields: [gradeId], references: [id])
+
+  @@id([studentId, subjectId, gradeId])
+  @@index([subjectId])
+  @@index([gradeId])
 }
 
 model RefreshToken {
@@ -87,13 +129,15 @@ model TutorApplication {
 }
 
 model Subject {
-  id          String                            @id @default(uuid())
-  name        String                            @unique
-  isActive    Boolean                           @default(true)
-  createdAt   DateTime                          @default(now())
-  updatedAt   DateTime                          @updatedAt
-  excludedBy  TutorApplicationExcludedSubject[]
-  teachableBy TutorApplicationSubject[]
+  id           String                            @id @default(uuid())
+  name         String                            @unique
+  isActive     Boolean                           @default(true)
+  createdAt    DateTime                          @default(now())
+  updatedAt    DateTime                          @updatedAt
+  excludedBy   TutorApplicationExcludedSubject[]
+  teachableBy  TutorApplicationSubject[]
+  offers       OfferSubject[]
+  weakSubjects StudentWeakSubject[]
 
   @@index([isActive])
 }
@@ -120,17 +164,79 @@ model TutorApplicationExcludedSubject {
   @@index([subjectId])
 }
 
+model Offer {
+  id          String      @id @default(uuid())
+  createdById String
+  studentId   String
+  gradeId     String
+  description String?
+  city        String
+  subCity     String
+  woreda      String?
+  village     String?
+  schedule    String
+  monthlyPay  Decimal     @db.Decimal(10, 2)
+  status      OfferStatus @default(OPEN)
+  createdAt   DateTime    @default(now())
+  updatedAt   DateTime    @updatedAt
+
+  creator      User               @relation(fields: [createdById], references: [id])
+  student      Student            @relation(fields: [studentId], references: [id], onDelete: Cascade)
+  grade        Grade              @relation(fields: [gradeId], references: [id])
+  subjects     OfferSubject[]
+  applications OfferApplication[]
+
+  @@index([createdById])
+  @@index([studentId])
+  @@index([status])
+  @@index([gradeId])
+  @@index([city, subCity])
+}
+
+model OfferSubject {
+  offerId   String
+  subjectId String
+
+  offer   Offer   @relation(fields: [offerId], references: [id], onDelete: Cascade)
+  subject Subject @relation(fields: [subjectId], references: [id])
+
+  @@id([offerId, subjectId])
+  @@index([subjectId])
+}
+
+model OfferApplication {
+  id        String                 @id @default(uuid())
+  offerId   String
+  tutorId   String
+  status    OfferApplicationStatus @default(PENDING)
+  appliedAt DateTime               @default(now())
+  updatedAt DateTime               @updatedAt
+
+  offer Offer @relation(fields: [offerId], references: [id])
+  tutor User  @relation(fields: [tutorId], references: [id])
+
+  @@unique([offerId, tutorId])
+  @@index([tutorId])
+  @@index([status])
+}
+
 model Grade {
-  id          String                           @id @default(uuid())
-  name        String                           @unique
-  sortOrder   Int                              @unique
-  isActive    Boolean                          @default(true)
-  createdAt   DateTime                         @default(now())
-  updatedAt   DateTime                         @updatedAt
-  teachableBy TutorApplicationGrade[]
-  preferredBy TutorApplicationPreferredGrade[]
+  id        String     @id @default(uuid())
+  name      String     @unique
+  level     GradeLevel @default(SCHOOL)
+  sortOrder Int        @unique
+  isActive  Boolean    @default(true)
+  createdAt DateTime   @default(now())
+  updatedAt DateTime   @updatedAt
+
+  teachableBy  TutorApplicationGrade[]
+  preferredBy  TutorApplicationPreferredGrade[]
+  students     Student[]
+  offers       Offer[]
+  weakSubjects StudentWeakSubject[]
 
   @@index([isActive])
+  @@index([level])
 }
 
 model TutorApplicationGrade {
@@ -246,6 +352,25 @@ enum TutorApplicationStatus {
   UNDER_REVIEW
   APPROVED
   REJECTED
+}
+
+enum OfferStatus {
+  OPEN
+  FILLED
+  CANCELLED
+}
+
+enum OfferApplicationStatus {
+  PENDING
+  ACCEPTED
+  REJECTED
+  WITHDRAWN
+}
+
+enum GradeLevel {
+  KINDERGARTEN
+  SCHOOL
+  UNIVERSITY
 }
 
 enum ApplicationDocumentType {

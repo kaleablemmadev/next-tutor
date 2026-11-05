@@ -1,4 +1,6 @@
+// src/features/auth/api/login.ts
 import { API_BASE_URL } from "@/config/api";
+import { saveSession } from "../services/session";
 
 type LoginInput = {
     identifier: string;
@@ -34,6 +36,12 @@ export async function login(input: LoginInput): Promise<LoginResponse> {
     if (!response.ok) {
         throw new Error(result.message ?? 'Unable to sign in.');
     }
+
+    await saveSession(
+        result.data.accessToken,
+        result.data.refreshToken,
+        result.data.user.role
+    )
 
     return result as LoginResponse;
 }
